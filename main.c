@@ -11,50 +11,33 @@
 
 #include "img_operations.h"
 #include "block_operations.h"
-
-
-#define OFFSET 20
-#define NTHREADS 4
+#include "globals.h"
 
 typedef struct {
     int i;
     int j;
 } vec_t;
 
-vec_t look_for_top(const int kBlockRow, const int kBlockCol, IplImage* prevFrame, IplImage* frame) {
-    int i, j;
-
-    for (i = -OFFSET; i < 0; i++) {
-        for (j = -OFFSET; j < OFFSET; j++) {
-            if (block_compare(kBlockRow, kBlockCol, prevFrame, kBlockRow + i, kBlockCol + j, frame) == 0) {
+vec_t look_for_block(const int kBlockRow, const int kBlockCol, IplImage* prevFrame, IplImage* frame) {
+    int min_dif = INT_MAX;
+    vec_t res = (vec_t){0, 0};
+    for (int i = -OFFSET; i <= OFFSET; i++) {
+        for (int j = -OFFSET; j <= OFFSET; j++) {
+            if (i == 0 && j == 0) continue;
+            int dif = block_compare(kBlockRow, kBlockCol, prevFrame, kBlockRow + i, kBlockCol + j, frame);
+            if (dif == 0) {
                 return (vec_t){ i, j};
             }
-        }
-    }
-
-    for (i = 1; i < OFFSET; i++) {
-        for (j = -OFFSET; j < OFFSET; j++) {
-            if (block_compare(kBlockRow, kBlockCol, prevFrame, kBlockRow + i, kBlockCol + j, frame) == 0) {
-                return (vec_t){i, j};
+            if (dif < min_dif) {
+                min_dif = dif;
+                res = (vec_t){i, j};
             }
         }
     }
-    return (vec_t){0, 0};
-}
-
-vec_t look_for_sides(const int kBlockRow, const int kBlockCol, IplImage* prevFrame, IplImage* frame) {
-    int j;
-    for (j = -1; j >= -OFFSET; j--) {
-        if (block_compare(kBlockRow, kBlockCol, prevFrame, kBlockRow, kBlockCol + j, frame) == 0) {
-            return (vec_t){0, j};
-        }
-    }
-    for (j = 1; j <= OFFSET; j++) {
-        if (block_compare(kBlockRow, kBlockCol, prevFrame, kBlockRow, kBlockCol + j, frame) == 0) {
-            return (vec_t){0, j};
-        }
-    }
-    return (vec_t){0, 0};
+#ifdef DEBUG
+    printf("Block not found\n");
+#endif
+    return res;
 }
 
 struct CandidateCalculateArgs {
@@ -67,25 +50,17 @@ struct CandidateCalculateArgs {
 
 void calculate_candidate(void* args) {
     struct CandidateCalculateArgs* data = (struct CandidateCalculateArgs*) args;
-    const vec_t top = look_for_top(data->block->fila + data->cropY, data->block->columna + data->cropX, data->prevFrame, data->frame);
-    const vec_t side = look_for_sides(data->block->fila + data->cropY, data->block->columna + data->cropX, data->prevFrame, data->frame);
 
-    data->cropY = top.i;
-    data->cropX = top.j;
-    data->cropY += side.i;
-    data->cropX += side.j;
+    const vec_t dir = look_for_block(data->block->fila, data->block->columna, data->prevFrame, data->frame);
+    data->cropY = dir.i;
+    data->cropX = dir.j;
 }
 
 int main(int argc, char** argv) {
 
 
-    if (argc != 2 && argc != 3) {
-        printf("Argumentos incorrectos\nestabilicacionvideo.exe [ruta archivo de vídeo] [-showoff]\n");
-        exit(-1);
-    }
-
-    if (argc != 3 && strcmp(argv[2], "-showoff") != 0) {
-        printf("Segundo argumento no reconocido\n");
+    if ((argc != 2 && argc != 3) || argc == 3 && strcmp(argv[2], "-showoff") != 0) {
+        printf("Argumentos incorrectos\nestabilicacionvideo [ruta archivo de vídeo] [-showoff]\n");
         exit(-1);
     }
 
@@ -109,6 +84,7 @@ int main(int argc, char** argv) {
     IplImage *frame = cvQueryFrame(capture);
     IplImage *prevFrame = cvCloneImage(frame);
     IplImage *outputFrame = cvCloneImage(frame);
+
     const IplImage* primerFrame = cvCloneImage(frame);
     int cropY = 0, cropX = 0;
 
@@ -150,14 +126,22 @@ int main(int argc, char** argv) {
         cropY += sum_cropY / NTHREADS;
         cropX += sum_cropX / NTHREADS;
 
+        for (int i = 0; i < NTHREADS; i++) {
+            args[i].block->fila += sum_cropY / NTHREADS;
+            args[i].block->columna += sum_cropX / NTHREADS;
+        }
+
 #ifdef DEBUG
         printf("cropY: %d, cropX: %d\n", cropY, cropX);
 #endif
 
         if (argc != 3) {
             crop_image(outputFrame, cropY < 0 ? -cropY : 0, cropY > 0 ? cropY : 0, cropX < 0 ? -cropX : 0, cropX > 0 ? cropX : 0);
+            for (int i = 0; i < NTHREADS; i++) {
+                cvRectangle(prevFrame, cvPoint(candidates[i].columna, candidates[i].fila), cvPoint(candidates[i].columna + BLOCK_SIZE, candidates[i].fila + BLOCK_SIZE), cvScalar(0, 0, 255, 0), 1, LINE_MAX, 0);
+            }
             cvShowImage("Prev", outputFrame);
-            cvShowImage("Frame", frame);
+            cvShowImage("Frame", prevFrame);
             cvWaitKey(0);
         }
         cvCopy(frame, prevFrame, NULL);

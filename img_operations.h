@@ -20,8 +20,6 @@ typedef struct {
  */
 void crop_image(IplImage *img, int top, int bot, int left, int right);
 
-
-
 void get_candidate_blocks(IplImage* img, block_candidate_t candidates[], int n);
 
 #endif /* IMG_OPERATIONS_H */
