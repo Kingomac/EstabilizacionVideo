@@ -5,8 +5,6 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/block_operations.h</itemPath>
-      <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/corner.h</itemPath>
-      <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/globals.h</itemPath>
       <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/img_operations.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
@@ -17,7 +15,6 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/block_operations.c</itemPath>
-      <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/corner.c</itemPath>
       <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/img_operations.c</itemPath>
       <itemPath>main.c</itemPath>
     </logicalFolder>
@@ -32,7 +29,6 @@
                    kind="IMPORTANT_FILES_FOLDER">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
-    <itemPath>C:/Users/kingo/Desktop/AP/EstabilizacionVideo/sources.txt</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -45,7 +41,7 @@
       <compileType>
         <cTool>
           <incDir>
-            <pElem>C:/Users/kingo/Downloads/opencv3.0.0/include</pElem>
+            <pElem>C:/opencv3.0.0/include</pElem>
           </incDir>
           <commandLine>-msse2 -mavx -mavx2</commandLine>
           <preprocessorList>
@@ -54,10 +50,10 @@
         </cTool>
         <linkerTool>
           <linkerAddLib>
-            <pElem>C:/Users/kingo/Downloads/opencv3.0.0/x64</pElem>
+            <pElem>C:/opencv3.0.0/x64</pElem>
           </linkerAddLib>
           <linkerLibItems>
-            <linkerLibFileItem>C:/Users/kingo/Downloads/opencv3.0.0/x64/opencv_world300.dll</linkerLibFileItem>
+            <linkerLibFileItem>C:/opencv3.0.0/x64/opencv_world300.dll</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>
@@ -71,32 +67,12 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/corner.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-      </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/corner.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/globals.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/img_operations.c"
             ex="false"
             tool="0"
             flavor2="0">
       </item>
       <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/img_operations.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/sources.txt"
             ex="false"
             tool="3"
             flavor2="0">
@@ -114,12 +90,9 @@
         <cTool>
           <developmentMode>5</developmentMode>
           <incDir>
-            <pElem>C:/Users/kingo/Downloads/opencv3.0.0/include</pElem>
+            <pElem>C:/opencv3.0.0/include</pElem>
           </incDir>
           <commandLine>-msse2 -mavx -mavx2</commandLine>
-          <preprocessorList>
-            <Elem>AVX2</Elem>
-          </preprocessorList>
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
@@ -132,10 +105,10 @@
         </asmTool>
         <linkerTool>
           <linkerAddLib>
-            <pElem>C:/Users/kingo/Downloads/opencv3.0.0/x64</pElem>
+            <pElem>C:/opencv3.0.0/x64</pElem>
           </linkerAddLib>
           <linkerLibItems>
-            <linkerLibFileItem>C:/Users/kingo/Downloads/opencv3.0.0/x64/opencv_world300.dll</linkerLibFileItem>
+            <linkerLibFileItem>C:/opencv3.0.0/x64/opencv_world300.dll</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>
@@ -149,32 +122,12 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/corner.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-      </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/corner.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/globals.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/img_operations.c"
             ex="false"
             tool="0"
             flavor2="0">
       </item>
       <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/img_operations.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="C:/Users/kingo/Desktop/AP/EstabilizacionVideo/sources.txt"
             ex="false"
             tool="3"
             flavor2="0">

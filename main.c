@@ -11,20 +11,30 @@
 
 #include "img_operations.h"
 #include "block_operations.h"
-#include "globals.h"
+
+
+#define OFFSET 20
+#define NTHREADS 4
 
 typedef struct {
     int i;
     int j;
 } vec_t;
 
-vec_t look_for_block(const int kBlockRow, const int kBlockCol, IplImage* prevFrame, IplImage* frame) {
+/**
+ * Busca un bloque a su alrededor en una imagen llegando como máximo al OFFSET
+ * @param row Fila de la esquina superior izquierda del bloque
+ * @param col Columna de la esquina superior izquierda del bloque
+ * @param prevFrame Frame previo
+ * @param frame Frame actual
+ * @return Vector con el desplazamiento de bloque
+ */
+vec_t look_for_block(const int row, const int col, IplImage* prevFrame, IplImage* frame) {
     int min_dif = INT_MAX;
     vec_t res = (vec_t){0, 0};
     for (int i = -OFFSET; i <= OFFSET; i++) {
         for (int j = -OFFSET; j <= OFFSET; j++) {
-            if (i == 0 && j == 0) continue;
-            int dif = block_compare(kBlockRow, kBlockCol, prevFrame, kBlockRow + i, kBlockCol + j, frame);
+            int dif = block_compare(row, col, prevFrame, row + i, col + j, frame);
             if (dif == 0) {
                 return (vec_t){ i, j};
             }
@@ -86,7 +96,7 @@ int main(int argc, char** argv) {
     IplImage *outputFrame = cvCloneImage(frame);
 
     const IplImage* primerFrame = cvCloneImage(frame);
-    int cropY = 0, cropX = 0;
+    vec_t crop = (vec_t){0, 0};
 
     block_candidate_t candidates[NTHREADS] = {(block_candidate_t)
         { -1, -1, -1}};
@@ -106,8 +116,8 @@ int main(int argc, char** argv) {
         for (int i = 0; i < NTHREADS; i++) {
             args[i] = (struct CandidateCalculateArgs){
                 &candidates[i],
-                cropY,
-                cropX,
+                crop.i,
+                crop.j,
                 frame,
                 prevFrame
             };
@@ -123,8 +133,8 @@ int main(int argc, char** argv) {
             sum_cropX += args[i].cropX;
         }
 
-        cropY += sum_cropY / NTHREADS;
-        cropX += sum_cropX / NTHREADS;
+        crop.i += sum_cropY / NTHREADS;
+        crop.j += sum_cropX / NTHREADS;
 
         for (int i = 0; i < NTHREADS; i++) {
             args[i].block->fila += sum_cropY / NTHREADS;
@@ -132,14 +142,16 @@ int main(int argc, char** argv) {
         }
 
 #ifdef DEBUG
-        printf("cropY: %d, cropX: %d\n", cropY, cropX);
+        printf("cropY: %d, cropX: %d\n", crop.i, crop.j);
 #endif
 
         if (argc != 3) {
-            crop_image(outputFrame, cropY < 0 ? -cropY : 0, cropY > 0 ? cropY : 0, cropX < 0 ? -cropX : 0, cropX > 0 ? cropX : 0);
+            crop_image(outputFrame, crop.i < 0 ? -crop.i : 0, crop.i > 0 ? crop.i : 0, crop.j < 0 ? -crop.j : 0, crop.j > 0 ? crop.j : 0);
+#ifdef DEBUG
             for (int i = 0; i < NTHREADS; i++) {
                 cvRectangle(prevFrame, cvPoint(candidates[i].columna, candidates[i].fila), cvPoint(candidates[i].columna + BLOCK_SIZE, candidates[i].fila + BLOCK_SIZE), cvScalar(0, 0, 255, 0), 1, LINE_MAX, 0);
             }
+#endif
             cvShowImage("Prev", outputFrame);
             cvShowImage("Frame", prevFrame);
             cvWaitKey(0);

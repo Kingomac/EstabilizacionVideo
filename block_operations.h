@@ -26,11 +26,12 @@ int block_compare(int i, int j, IplImage *imgA, int k, int l, IplImage *imgB);
 void block_copy(int i, int j, IplImage *imgOri, int k, int l, IplImage *imgDest);
 
 /**
- * Calcula la intensidad de un microbloque (la imagen debe estar en escala de grises)
- * @param img imagene n escala de grises
- * @param i fila píxel esquina del bloque origen
- * @param j columna píxel esquina del bloque origen
- * @return intensidad = suma de todos los píxeles
+ * Calcula la intensidad de un bloque, que es la suma de todos sus valores, o
+ * compararlo con un bloque negro
+ * @param img imagen
+ * @param i fila de la esquina superior izquierda del bloque
+ * @param j columna de la esquina superior izquierda del bloque
+ * @return intensidad = suma de todos los componentes de todos los píxeles
  */
 int block_intensity(IplImage* img, int i, int j);
 

@@ -20,6 +20,13 @@ typedef struct {
  */
 void crop_image(IplImage *img, int top, int bot, int left, int right);
 
+/**
+ * Busca bloques candidatos para realizar las búsquedas comprobando que tengan
+ * información variada a su alrededor y sean más fáciles de buscar
+ * @param img Imagen
+ * @param candidates Array del resultado
+ * @param n Número de candidatos
+ */
 void get_candidate_blocks(IplImage* img, block_candidate_t candidates[], int n);
 
 #endif /* IMG_OPERATIONS_H */
