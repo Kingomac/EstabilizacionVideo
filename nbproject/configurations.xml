@@ -45,6 +45,7 @@
           </incDir>
           <commandLine>-msse2 -mavx -mavx2</commandLine>
           <preprocessorList>
+            <Elem>AVX2</Elem>
             <Elem>DEBUG</Elem>
           </preprocessorList>
         </cTool>
@@ -93,6 +94,9 @@
             <pElem>C:/opencv3.0.0/include</pElem>
           </incDir>
           <commandLine>-msse2 -mavx -mavx2</commandLine>
+          <preprocessorList>
+            <Elem>AVX2</Elem>
+          </preprocessorList>
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
