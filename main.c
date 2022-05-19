@@ -25,16 +25,16 @@ typedef struct {
  * Busca un bloque a su alrededor en una imagen llegando como máximo al OFFSET
  * @param row Fila de la esquina superior izquierda del bloque
  * @param col Columna de la esquina superior izquierda del bloque
- * @param prevFrame Frame previo
+ * @param prevBlock Imagen que contiene el bloque a buscar
  * @param frame Frame actual
  * @return Vector con el desplazamiento de bloque
  */
-vec_t look_for_block(const int row, const int col, IplImage* prevFrame, IplImage* frame) {
+vec_t look_for_block(const int row, const int col, IplImage* prevBlock, IplImage* frame) {
     int min_dif = INT_MAX;
     vec_t res = (vec_t){0, 0};
     for (int i = -OFFSET; i <= OFFSET; i++) {
         for (int j = -OFFSET; j <= OFFSET; j++) {
-            int dif = block_compare(row, col, prevFrame, row + i, col + j, frame);
+            int dif = block_compare(0, 0, prevBlock, row + i, col + j, frame);
             if (dif == 0) {
                 return (vec_t){ i, j};
             }
@@ -55,13 +55,12 @@ struct CandidateCalculateArgs {
     int cropY;
     int cropX;
     IplImage* frame;
-    IplImage* prevFrame;
 };
 
 void calculate_candidate(void* args) {
     struct CandidateCalculateArgs* data = (struct CandidateCalculateArgs*) args;
 
-    const vec_t dir = look_for_block(data->block->fila, data->block->columna, data->prevFrame, data->frame);
+    const vec_t dir = look_for_block(data->block->fila + data->cropY, data->block->columna + data->cropX, data->block->block, data->frame);
     data->cropY = dir.i;
     data->cropX = dir.j;
 }
@@ -92,26 +91,33 @@ int main(int argc, char** argv) {
 #endif
 
     IplImage *frame = cvQueryFrame(capture);
-    IplImage *prevFrame = cvCloneImage(frame);
     IplImage *outputFrame = cvCloneImage(frame);
 
-    const IplImage* primerFrame = cvCloneImage(frame);
+    IplImage* primerFrame = cvCloneImage(frame);
     vec_t crop = (vec_t){0, 0};
 
-    block_candidate_t candidates[NTHREADS] = {(block_candidate_t)
-        { -1, -1, -1}};
+    block_candidate_t candidates[NTHREADS];
 
     get_candidate_blocks(frame, candidates, NTHREADS);
 
-#ifdef DEBUG
-    for (int i = 0; i < NTHREADS; i++)
-        printf("candidato %d: fila %d, columna %d, max_dif %d\n", i, candidates[i].fila, candidates[i].columna, candidates[i].max_dif);
-#endif
+    /*cvNamedWindow("a", CV_WINDOW_KEEPRATIO);
+    cvNamedWindow("b", CV_WINDOW_KEEPRATIO);
+    for (int i = 0; i < NTHREADS; i++) {
+        cvShowImage("a", candidates[i].block);
+        IplImage* xd = cvCloneImage(frame);
+        cvRectangle(xd, cvPoint(candidates[i].columna, candidates[i].fila), cvPoint(candidates[i].columna + BLOCK_SIZE, candidates[i].fila + BLOCK_SIZE), cvScalar(0, 0, 255, 0), 1, LINE_MAX, 0);
+        cvShowImage("b", xd);
+        cvWaitKey(0);
+    }
+
+    printf("%d\n\n\n", block_compare(0, 0, candidates[0].block, candidates[0].fila, candidates[0].columna, frame));
+    printf("%d\n\n\n", block_compare(224, 373, frame, candidates[0].fila, candidates[0].columna, frame));*/
+
 
     pthread_t threads[NTHREADS];
     struct CandidateCalculateArgs args[NTHREADS];
 
-    while ((frame = cvQueryFrame(capture)) != NULL) {
+    do {
 
         for (int i = 0; i < NTHREADS; i++) {
             args[i] = (struct CandidateCalculateArgs){
@@ -119,7 +125,6 @@ int main(int argc, char** argv) {
                 crop.i,
                 crop.j,
                 frame,
-                prevFrame
             };
             pthread_create(&threads[i], NULL, (void*) &calculate_candidate, (void*) &args[i]);
         }
@@ -136,29 +141,22 @@ int main(int argc, char** argv) {
         crop.i += sum_cropY / NTHREADS;
         crop.j += sum_cropX / NTHREADS;
 
-        for (int i = 0; i < NTHREADS; i++) {
-            args[i].block->fila += sum_cropY / NTHREADS;
-            args[i].block->columna += sum_cropX / NTHREADS;
-        }
-
 #ifdef DEBUG
         printf("cropY: %d, cropX: %d\n", crop.i, crop.j);
 #endif
 
         if (argc != 3) {
-            crop_image(outputFrame, crop.i < 0 ? -crop.i : 0, crop.i > 0 ? crop.i : 0, crop.j < 0 ? -crop.j : 0, crop.j > 0 ? crop.j : 0);
-#ifdef DEBUG
-            for (int i = 0; i < NTHREADS; i++) {
-                cvRectangle(prevFrame, cvPoint(candidates[i].columna, candidates[i].fila), cvPoint(candidates[i].columna + BLOCK_SIZE, candidates[i].fila + BLOCK_SIZE), cvScalar(0, 0, 255, 0), 1, LINE_MAX, 0);
-            }
-#endif
-            cvShowImage("Prev", outputFrame);
-            cvShowImage("Frame", prevFrame);
+            int cropTop = crop.i < 0 ? -crop.i : 0;
+            int cropBot = crop.i > 0 ? crop.i : 0;
+            int cropLeft = crop.j < 0 ? -crop.j : 0;
+            int cropRight = crop.j > 0 ? crop.j : 0;
+            crop_image(outputFrame, cropTop, cropBot, cropLeft, cropRight);
+            cvShowImage("Resultado", outputFrame);
+            cvShowImage("Original", frame);
             cvWaitKey(0);
         }
-        cvCopy(frame, prevFrame, NULL);
         cvCopy(primerFrame, outputFrame, NULL);
-    }
+    } while ((frame = cvQueryFrame(capture)) != NULL);
 
     clock_gettime(CLOCK_MONOTONIC, &finish);
     elapsed = finish.tv_sec - start.tv_sec;

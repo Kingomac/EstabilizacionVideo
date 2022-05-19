@@ -40,7 +40,7 @@ void crop_image(IplImage *img, int top, int bot, int left, int right) {
 
     for (fila = img->height - 1; fila > img->height - bot; fila--) {
         __m256i* pImg = (__m256i*) (img->imageData + fila * img->widthStep);
-        for (columna = 0; columna < img->widthStep; columna += 32)
+        for (columna = 0; columna + 32 < img->widthStep; columna += 32)
             _mm256_storeu_si256(pImg++, CEROS);
 
         unsigned char* pImgChar = (unsigned char*) (pImg);
@@ -51,7 +51,7 @@ void crop_image(IplImage *img, int top, int bot, int left, int right) {
     // Borde izquierdo
     for (fila = 0; fila < img->height; fila++) {
         __m256i* pImg = (__m256i*) (img->imageData + fila * img->widthStep);
-        for (columna = 0; columna + 16 < left * img->nChannels; columna += 32) {
+        for (columna = 0; columna + 32 < left * img->nChannels; columna += 32) {
             _mm256_storeu_si256(pImg++, CEROS);
         }
         unsigned char* pImgChar = (unsigned char*) (pImg);
@@ -61,7 +61,7 @@ void crop_image(IplImage *img, int top, int bot, int left, int right) {
     // Borde derecho
     for (fila = 0; fila < img->height; fila++) {
         __m256i* pImg = (__m256i*) (img->imageData + fila * img->widthStep + (img->width - right) * img->nChannels);
-        for (columna = (img->width - right) * img->nChannels; columna < img->widthStep; columna += 32)
+        for (columna = (img->width - right) * img->nChannels; columna + 32 < img->widthStep; columna += 32)
             _mm256_storeu_si256(pImg++, CEROS);
         unsigned char* pImgChar = (unsigned char*) (pImg);
         for (; columna < img->widthStep; columna++)
@@ -90,7 +90,7 @@ void crop_image(IplImage *img, int top, int bot, int left, int right) {
 
     for (fila = img->height - 1; fila > img->height - bot; fila--) {
         __m128i* pImg = (__m128i*) (img->imageData + fila * img->widthStep);
-        for (columna = 0; columna < img->widthStep; columna += 16)
+        for (columna = 0; columna + 16 < img->widthStep; columna += 16)
             _mm_storeu_si128(pImg++, CEROS);
 
         unsigned char* pImgChar = (unsigned char*) (pImg);
@@ -111,7 +111,7 @@ void crop_image(IplImage *img, int top, int bot, int left, int right) {
     // Borde derecho
     for (fila = 0; fila < img->height; fila++) {
         __m128i* pImg = (__m128i*) (img->imageData + fila * img->widthStep + (img->width - right) * img->nChannels);
-        for (columna = (img->width - right) * img->nChannels; columna < img->widthStep; columna += 16)
+        for (columna = (img->width - right) * img->nChannels; columna + 16 < img->widthStep; columna += 16)
             _mm_storeu_si128(pImg++, CEROS);
         unsigned char* pImgChar = (unsigned char*) (pImg);
         for (; columna < img->widthStep; columna++)
@@ -131,6 +131,9 @@ void add_candidate(block_candidate_t arr[], block_candidate_t candidate, int n) 
 }
 
 void get_candidate_blocks(IplImage* Img, block_candidate_t candidates[], int n) {
+    for (int i = 0; i < n; i++) {
+        candidates[i] = (block_candidate_t){-1, -1, -1, NULL};
+    }
     for (int fila = Img->height / 3; fila < Img->height - Img->height / 3; fila += BLOCK_SIZE * 1.5) {
         for (int columna = Img->width / 3; columna < Img->width - Img->width / 3; columna += BLOCK_SIZE * 1.5) {
             int intensidad_centro = block_intensity(Img, fila, columna);
@@ -141,4 +144,27 @@ void get_candidate_blocks(IplImage* Img, block_candidate_t candidates[], int n) 
             }
         }
     }
+
+    for (int i = 0; i < n; i++) {
+#ifdef DEBUG
+        printf("candidato %d: fila %d, columna %d, max_dif %d\n", i, candidates[i].fila, candidates[i].columna, candidates[i].max_dif);
+#endif
+        candidates[i].block = cvCreateImage(cvSize(BLOCK_SIZE, BLOCK_SIZE), Img->depth, Img->nChannels);
+        for (int fila = 0; fila < BLOCK_SIZE; fila++) {
+#if AVX2
+            __m256i* pImg = (__m256i*) (Img->imageData + (fila + candidates[i].fila) * Img->widthStep + candidates[i].columna * Img->nChannels);
+            __m256i* pBlock = (__m256i*) (candidates[i].block->imageData + fila * candidates[i].block->widthStep);
+            for (int columna = 0; columna < BLOCK_SIZE * Img->nChannels; columna += 32) {
+                _mm256_storeu_si256(pBlock++, _mm256_loadu_si256(pImg++));
+            }
+#else
+            __m128i* pImg = (__m128i*) (Img->imageData + (fila + candidates[i].fila) * Img->widthStep + candidates[i].columna * Img->nChannels);
+            __m128i* pBlock = (__m128i*) (candidates[i].block->imageData + fila * candidates[i].block->widthStep);
+            for (int columna = 0; columna < BLOCK_SIZE * Img->nChannels; columna += 16) {
+                _mm_storeu_si128(pBlock++, _mm_loadu_si128(pImg++));
+            }
+#endif
+        }
+    }
+
 }

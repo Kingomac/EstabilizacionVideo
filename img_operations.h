@@ -8,6 +8,7 @@ typedef struct {
     int fila;
     int columna;
     int max_dif;
+    IplImage* block;
 } block_candidate_t;
 
 /**
